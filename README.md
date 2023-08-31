@@ -1,17 +1,12 @@
 ** Fork info **
 
-Apparently, I have become the curator of this code by virtue of having
-preserved the last remaining fork of the BigSQL fork of pgadmin3-lts.
-Although a limited amount of maintenance work has occurred, there is no
-active project leadership or commitments to maintain pgadmin-lts
-compatibility with future releases of PostgreSQL.  The master branch is functional
-with PostgreSQL 15.  YMMV.
+This is the fork of allentc/pgadmin3-lts repository intended specifically
+to build pgAdmin3 on Ubuntu 22.04 (my current primary OS). 
 
-Also, this GitHub repo will not vanish.
-
--- 
-allentc
-
+I've created this fork only because I didn't manage to build pgAdmin
+from allentc's repo. So I had to apply some minor changes to sources first.
+As I am not a professional C coder I'm not sure these changes will not break
+builds for other OSes though.
 
 **# pgAdmin3 LTS by BigSQL README #**
 
@@ -47,28 +42,32 @@ Code has been changed to adapt PostgreSQL internal changes up to version 15.2:
 - Declarative Table Partitioning DDL.
 - No more datlastsysoid in pg_database.
 
-If you are too lazy to read [INSTALL](./INSTALL) instructions, then try this for Debian/Ubuntu/Mint:
+Complete build sequence on a pristine Ubuntu 22.04:
 ------------------------
 ```
-# apt-get install libwxgtk3.0-dev wx3.0-headers wxgtk3.0 wx3.0
 
-# apt-get install libssh2-1 libssh2-1-dev libgcrypt20 libgcrypt20-dev libjson-perl libpq-dev #postgresql-15 postgresql-contrib-15 postgresql-client-15
-# systemctl restart postgresql || true
+# PostgreSQL repo
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+sudo apt-get update
 
-$ bash bootstrap
-$ ./configure --prefix=/opt/pgadmin3bigsql --with-libgcrypt --with-wx-version=3.0  CFLAGS=-fPIC CXXFLAGS=-fPIC #--with-pgsql=/usr/lib/postgresql/15 --without-sphinx-build
-$ make -j8
-$ sudo make install
-```
+# required packages (including PostgreSQL 15)
+sudo apt install git postgresql-15 postgresql-server-dev-15 libwxgtk3.0-gtk3-dev wx3.0-headers libxslt1-dev libssh2-1-dev automake build-essential
 
-for Centos/RedHat:
-------------------------
-```
-yum install wxGTK3 wxGTK3-devel
-yum install libssh2 libssh2-devel libxml2 libxml2-devel libxslt libxslt-devel openssl-devel #postgresql15 postgresql15-devel postgresql15-libs
+# downloading sources into ~/projects/pgadmin3-lts
+mkdir -p ~/projects
+cd ~/projects
+git clone https://github.com/ledstellar/pgadmin3-lts
+cd pgadmin3-lts
 
-$ bash bootstrap
-$ ./configure --prefix=/opt/pgadmin3bigsql --with-wx-version=3.0  CFLAGS=-fPIC CXXFLAGS=-fPIC --with-pgsql=/usr/pgsql-15 --without-sphinx-build
-$ make -j8
-$ sudo make install
+# building
+mkdir build
+bash bootstrap
+cd build
+../configure --prefix=/opt/pgadmin3bigsql CFLAGS="-fPIC -g -O0" CXXFLAGS="-fPIC -DDEBUG" --with-pgsql=/usr/lib/postgresql/15 --without-sphinx-build
+make -j$(nproc)
+sudo make install
+
+# run!
+/opt/pgadmin3bigsql/bin/pgadmin3
 ```
